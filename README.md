@@ -1,158 +1,161 @@
-## AI-Powered RFP Management System
+# AI‑Powered RFP Management System
 
-Single-user, end-to-end RFP workflow with AI-assisted structuring, parsing, and comparison of proposals.
+Single‑user, end‑to‑end RFP workflow with AI‑assisted creation, email‑based proposal intake, and AI comparison of vendor offers.
 
-### 1. Project Setup
+**Dev quick start (from repo root):**
+```bash
+cd backend && npm install && npm run dev & cd ../frontend && npm install && npm run dev
+```
 
-- **Prerequisites**
-  - Node.js 20+
-  - npm 9+
-  - A Google Gemini API key
-  - SMTP + IMAP credentials for a test email inbox (e.g. Mailtrap, Gmail with app password)
+This README is a concise overview. For deep dives see: `QUICK_START.md`, `FEATURES.md`, and `IMPLEMENTATION_SUMMARY.md`.
 
-- **Install**
-  - Backend:
-    - `cd backend`
-    - `npm install`
-    - Set `DATABASE_URL` (SQLite by default: `file:./dev.db`) and other env vars in a local `.env`
-    - `npx prisma migrate dev --name init`
-  - Frontend:
-    - `cd frontend`
-    - `npm install`
+---
 
-- **Configure email & AI**
-  - Backend reads from `.env` (in `backend/`) with:
-    - `GEMINI_API_KEY`
-    - `SMTP_HOST`, `SMTP_PORT`, `SMTP_SECURE`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`
-    - `IMAP_HOST`, `IMAP_PORT`, `IMAP_SECURE`, `IMAP_USER`, `IMAP_PASS`
-  - Use a sandbox like Mailtrap or a dedicated test inbox.
+## Features
 
-- **Run locally**
-  - Backend: `cd backend && npm run dev`
-  - Frontend: `cd frontend && npm run dev`
-  - Frontend runs at `http://localhost:5173`, proxied to backend `http://localhost:4000` for `/api`.
+- Create structured RFPs from natural‑language prompts (Gemini)
+- Manage vendors (CRUD) in a simple dashboard
+- Send RFPs to vendors via email (SMTP)
+- Receive vendor replies from an inbox (IMAP) and parse them with AI into proposals
+- Automatic email polling service (every 2 minutes) + manual "poll now"
+- AI comparison across proposals with scores, strengths/weaknesses, and a recommended vendor
 
-### 2. Tech Stack
+---
 
-- **Frontend**: React 18, Vite, TypeScript, custom modern UI.
-- **Backend**: Node.js, Express, TypeScript, Prisma ORM.
-- **DB**: SQLite (swap to Postgres by changing `datasource` + `DATABASE_URL`).
-- **AI**: Google Gemini (`gemini-1.5-flash`) via `@google/generative-ai` for:
-  - Converting natural language into structured RFPs.
-  - Parsing messy vendor email responses into structured proposals.
-  - Comparing proposals and recommending a vendor.
-- **Email**:
-  - Nodemailer (SMTP) for sending RFP emails.
-  - ImapFlow (IMAP) for polling inbox and ingesting vendor replies.
+## Tech Stack
 
-### 3. API Documentation (main endpoints)
+- **Frontend**: React 18, Vite, TypeScript, custom black‑and‑white dashboard UI
+- **Backend**: Node.js, Express, TypeScript, Prisma ORM
+- **Database**: SQLite by default (`DATABASE_URL = file:./dev.db`), can be swapped to Postgres
+- **AI**: Google Gemini (`@google/generative-ai`)
+- **Email**: Nodemailer (SMTP sending), ImapFlow (IMAP receiving)
 
-- **Create RFP from natural language**
-  - `POST /api/rfps/from-text`
-  - Body: `{ "text": "I need to procure laptops and monitors..." }`
-  - Response: persisted RFP with structured fields + line items.
+Repository layout:
 
-- **List RFPs**
-  - `GET /api/rfps`
-  - Response: array of RFP summaries.
+- `backend/` – API, email + AI logic, database
+- `frontend/` – SPA dashboard UI
+- Docs: `QUICK_START.md`, `FEATURES.md`, `IMPLEMENTATION_SUMMARY.md`, `HOW_TO_TEST_AI_COMPARISON.md`, `UI_IMPROVEMENTS.md`, `LAYOUT_REDESIGN.md`
 
-- **Get RFP detail (with proposals)**
-  - `GET /api/rfps/:id`
-  - Response: RFP, line items, and proposals (with vendor details).
+---
 
-- **Send RFP to vendors**
-  - `POST /api/rfps/:id/send`
-  - Body: `{ "vendorIds": [1, 2, 3] }`
-  - Behavior:
-    - Uses Nodemailer to send an email per vendor with subject `RFP #<id>: <title>`.
-    - Marks RFP status as `sent`.
+## Prerequisites
 
-- **Compare proposals with AI**
-  - `GET /api/rfps/:id/compare`
-  - Response:
-    - `{ recommendation: string, rationale: string, perVendor: [{ vendorId, vendorName, strengths[], weaknesses[], score }] }`
-  - Uses OpenAI to synthesize proposal summaries into a recommendation.
+- Node.js 20+
+- npm 9+
+- Google Gemini API key
+- SMTP + IMAP credentials for a test inbox (e.g. Ethereal, Mailtrap, or Gmail app password)
 
-- **Vendor management**
-  - `GET /api/vendors` → list vendors.
-  - `POST /api/vendors` → create vendor:
-    - Body: `{ "name": "Acme", "email": "sales@acme.com", "phone": "..." }`
-  - `PUT /api/vendors/:id` → update vendor.
-  - `DELETE /api/vendors/:id` → delete vendor.
+---
 
-- **Email ingestion (vendor responses)**
-  - `POST /api/email/poll`
-  - Behavior:
-    - Connects to IMAP inbox.
-    - Searches unseen messages with `"RFP #"` in subject.
-    - Extracts `RFP #<id>` from subject, matches vendor by `from` email.
-    - Calls Gemini to parse full raw email into a structured proposal.
-    - Persists `Proposal` rows linked to `Rfp` + `Vendor`.
+## Backend Setup (`backend/`)
 
-### 4. Decisions & Assumptions
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. Create `backend/.env` with at least:
+   ```env
+   DATABASE_URL=file:./dev.db
+   GEMINI_API_KEY=your-gemini-api-key
 
-- **RFP modeling**
-  - `Rfp` core fields: `title`, `description`, `budget`, `currency`, `deliveryWindow`, `paymentTerms`, `warranty`, `status`, plus `rawPrompt`.
-  - `RfpLineItem` captures granular items (e.g. “20 laptops 16GB RAM”), used for future fine-grained scoring.
-  - This mirrors how real procurement teams break down specs and quantities while staying flexible.
+   SMTP_HOST=...
+   SMTP_PORT=587
+   SMTP_SECURE=false
+   SMTP_USER=...
+   SMTP_PASS=...
+   SMTP_FROM="RFP Bot <no-reply@example.com>"
 
-- **Proposals & vendors**
-  - `Vendor` stores basic contact data; email is unique and is used to match inbound messages.
-  - `Proposal` stores:
-    - `rawEmail` (for traceability and future re-parsing).
-    - `parsedJson` (LLM output).
-    - Scalar fields (`totalPrice`, `currency`, `deliveryDays`, `aiSummary`, `score`) pre-extracted for UX and basic analytics.
+   IMAP_HOST=...
+   IMAP_PORT=993
+   IMAP_SECURE=true
+   IMAP_USER=...
+   IMAP_PASS=...
+   ```
+3. Initialize the database:
+   ```bash
+   npx prisma migrate dev --name init
+   ```
+4. Run the backend in dev mode (port 4000 by default):
+   ```bash
+   npm run dev
+   ```
 
-- **Email workflow assumptions**
-  - Outbound RFP emails always use subject `RFP #<rfpId>: <title>`.
-  - Vendors are expected to **reply** without changing the subject; that’s how we map replies back to the originating RFP.
-  - Vendor matching uses the `from` address on the email; that address must exist in the `Vendor` table.
-  - Email receiving is implemented as a **polling endpoint** (`POST /api/email/poll`) instead of a long-lived daemon/webhook:
-    - Simpler for local dev.
-    - You trigger polling via the UI button during the demo.
+Key endpoints (prefix: `http://localhost:4000`):
 
-- **AI integration choices**
-  - RFP creation and response parsing use strict JSON response format with Zod validation (`RfpSchema`, `ProposalSchema`), which:
-    - Hardens against LLM drift.
-    - Keeps structured data stable for the UI and future rules-based scoring.
-  - Comparison endpoint feeds:
-    - RFP text.
-    - Lightweight proposal summary objects.
-  - Model produces:
-    - A single winning recommendation and rationale.
-    - Per-vendor strengths/weaknesses and 0–100 scores.
-  - These can be combined with deterministic rules (e.g. hard caps on SLA) in future iterations for more enterprise-grade behavior.
+- `GET /health` – health check
+- `POST /api/rfps/from-text` – create RFP from free‑text
+- `GET /api/rfps` / `GET /api/rfps/:id` – list + detail (with proposals)
+- `POST /api/rfps/:id/send` – send RFP emails to vendors
+- `GET /api/rfps/:id/compare` – AI comparison
+- `GET /api/vendors`, `POST /api/vendors`, `DELETE /api/vendors/:id` – vendor management
+- `POST /api/email/poll` – one‑off inbox poll
+- `GET /api/email/polling/status` / `POST /start` / `POST /stop` – auto‑polling controls
 
-- **Frontend UX**
-  - Left rail:
-    - Chat-style RFP creation from natural language.
-    - RFP list.
-    - Vendor management.
-  - Main pane:
-    - RFP detail (core fields + line items).
-    - Workflow controls (send RFP, poll inbox, compare proposals).
-    - Proposal cards with AI summaries.
-    - AI recommendation section with per-vendor scores.
-  - Focus is on making the single-user flow demoable within a few minutes without needing complex navigation.
+The email polling service auto‑starts on server boot and checks IMAP every 2 minutes.
 
-### 5. AI Tools Usage
+---
 
-- **Tools used while building**
-  - Cursor + GPT-based assistant (this project).
+## Frontend Setup (`frontend/`)
 
-- **What they helped with**
-  - Rapidly scaffolding backend and frontend boilerplate.
-  - Designing prompts and JSON schemas for the RFP extractor, vendor response parser, and comparator.
-  - Ensuring end-to-end flow wiring (API contracts, React components, and styling) remained consistent.
+1. Install dependencies:
+   ```bash
+   npm install
+   ```
+2. For local dev (backend on `http://localhost:4000`), create `frontend/.env`:
+   ```env
+   VITE_API_URL=http://localhost:4000
+   ```
+3. Run the dev server (port 5173 by default):
+   ```bash
+   npm run dev
+   ```
 
-- **Notable approaches**
-  - Used JSON-only responses with Zod validation to keep LLM outputs strictly structured.
-  - Isolated AI concerns into `src/ai/*` on the backend to keep controllers simple and testable.
+The app UI lets you:
+- Create RFPs from natural language
+- Switch between **Dashboard** and **Vendors** views
+- Send RFPs to vendors, monitor email polling, and trigger AI comparison
 
-- **What I’d do next with more time**
-  - Add richer scoring that blends AI with deterministic rules (e.g. mandatory requirements, penalties).
-  - Introduce background workers / webhooks for IMAP so polling is automatic.
-  - Add full proposal detail UIs (line items, assumptions, risks).
-  - Add tests for parsing edge cases and LLM failure modes.
+---
 
+## Core Workflow (Happy Path)
 
+1. **Create vendors** in the Vendors view (name + email, phone optional).
+2. **Create an RFP** using the "Create New RFP" card by describing your needs in plain English.
+3. **Send the RFP** to vendors by entering their IDs and clicking the send button.
+4. Vendors **reply by email** (keeping the `RFP #<id>` subject); the system:
+   - Reads emails from IMAP
+   - Matches the RFP by `RFP #<id>` in subject
+   - Matches the vendor by `from` email
+   - Parses the body with Gemini into a structured `Proposal`.
+5. Proposals appear under the selected RFP; click **Compare with AI** to get a recommendation and per‑vendor scores.
+
+If you want a step‑by‑step walkthrough (including sample email contents and test scripts), see `QUICK_START.md` and `HOW_TO_TEST_AI_COMPARISON.md`.
+
+---
+
+## Deployment Notes
+
+- **Frontend**: can be deployed as a static build (e.g. Vercel) from `frontend/` using:
+  ```bash
+  npm run build
+  ```
+  and environment variable `VITE_API_URL` pointing at your deployed backend.
+
+- **Backend**: deploy as a Node/Express service (e.g. Render, Railway, VPS). Use:
+  ```bash
+  npm run build
+  npm run start
+  ```
+  and copy your `.env` values to the host environment.
+
+Make sure the backend URL you expose externally is what you configure as `VITE_API_URL` for the frontend.
+
+---
+
+## Further Documentation
+
+- **Quick start & demo script**: `QUICK_START.md`
+- **Detailed feature docs & troubleshooting**: `FEATURES.md`
+- **Implementation details & architecture**: `IMPLEMENTATION_SUMMARY.md`
+- **Testing AI comparison**: `HOW_TO_TEST_AI_COMPARISON.md`
+- **UI & layout changes**: `UI_IMPROVEMENTS.md`, `LAYOUT_REDESIGN.md`
