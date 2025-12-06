@@ -1,0 +1,65 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Vendor {
+  id        Int       @id @default(autoincrement())
+  name      String
+  email     String    @unique
+  phone     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  proposals Proposal[]
+}
+
+model Rfp {
+  id              Int        @id @default(autoincrement())
+  title           String
+  description     String
+  budget          Float?
+  currency        String?    @default("USD")
+  deliveryWindow  String?
+  paymentTerms    String?
+  warranty        String?
+  rawPrompt       String
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  status          String     @default("draft")
+  lineItems       RfpLineItem[]
+  proposals       Proposal[]
+}
+
+model RfpLineItem {
+  id          Int    @id @default(autoincrement())
+  rfp         Rfp    @relation(fields: [rfpId], references: [id])
+  rfpId       Int
+  name        String
+  description String?
+  quantity    Int
+  specs       String?
+}
+
+model Proposal {
+  id             Int       @id @default(autoincrement())
+  rfp            Rfp       @relation(fields: [rfpId], references: [id])
+  rfpId          Int
+  vendor         Vendor    @relation(fields: [vendorId], references: [id])
+  vendorId       Int
+  emailMessageId String?   @unique
+  rawEmail       String
+  parsedJson     String  // Stored as JSON string for SQLite compatibility
+  totalPrice     Float?
+  currency       String?   @default("USD")
+  deliveryDays   Int?
+  score          Float?
+  aiSummary      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+
