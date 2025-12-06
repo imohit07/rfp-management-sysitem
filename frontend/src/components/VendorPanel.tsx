@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../utils/api";
 
 interface Vendor {
   id: number;
@@ -15,7 +16,7 @@ export const VendorPanel: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
 
   const loadVendors = async () => {
-    const res = await fetch("/api/vendors");
+    const res = await fetch(apiUrl("/api/vendors"));
     const data = await res.json();
     setVendors(data);
   };
@@ -28,7 +29,7 @@ export const VendorPanel: React.FC = () => {
     e.preventDefault();
     setError(null);
     try {
-      const res = await fetch("/api/vendors", {
+      const res = await fetch(apiUrl("/api/vendors"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, phone: phone || undefined })
@@ -51,7 +52,7 @@ export const VendorPanel: React.FC = () => {
       return;
     }
     try {
-      const res = await fetch(`/api/vendors/${id}`, {
+      const res = await fetch(apiUrl(`/api/vendors/${id}`), {
         method: "DELETE"
       });
       if (!res.ok) throw new Error("Failed to delete vendor");

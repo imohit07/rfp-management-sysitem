@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { apiUrl } from "../utils/api";
 
 interface Vendor {
   id: number;
@@ -58,7 +59,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/rfps/${rfpId}`);
+      const res = await fetch(apiUrl(`/api/rfps/${rfpId}`));
       if (!res.ok) throw new Error("Failed to load RFP");
       const data: RfpDetailData = await res.json();
       setRfp(data);
@@ -72,7 +73,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
   const checkPollingStatus = async () => {
     setCheckingStatus(true);
     try {
-      const res = await fetch("/api/email/polling/status");
+      const res = await fetch(apiUrl("/api/email/polling/status"));
       if (res.ok) {
         const data = await res.json();
         setPollingServiceRunning(data.isRunning);
@@ -87,7 +88,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
   const togglePollingService = async () => {
     try {
       const endpoint = pollingServiceRunning ? "/api/email/polling/stop" : "/api/email/polling/start";
-      const res = await fetch(endpoint, { method: "POST" });
+      const res = await fetch(apiUrl(endpoint), { method: "POST" });
       if (!res.ok) throw new Error(`Failed to ${pollingServiceRunning ? "stop" : "start"} polling service`);
       await checkPollingStatus();
     } catch (e) {
@@ -108,7 +109,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
     setSending(true);
     setEmailSentMessage(null);
     try {
-      const res = await fetch(`/api/rfps/${rfpId}/send`, {
+      const res = await fetch(apiUrl(`/api/rfps/${rfpId}/send`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendorIds: selectedVendorIds })
@@ -128,7 +129,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
   const pollInbox = async () => {
     setPolling(true);
     try {
-      const res = await fetch("/api/email/poll", { method: "POST" });
+      const res = await fetch(apiUrl("/api/email/poll"), { method: "POST" });
       if (!res.ok) throw new Error("Failed to poll inbox");
       await loadRfp();
     } catch (e) {
@@ -141,7 +142,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
   const runComparison = async () => {
     setComparing(true);
     try {
-      const res = await fetch(`/api/rfps/${rfpId}/compare`);
+      const res = await fetch(apiUrl(`/api/rfps/${rfpId}/compare`));
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Comparison failed");
       setComparison(data);
@@ -158,7 +159,7 @@ export const RfpDetail: React.FC<Props> = ({ rfpId, onDeleted }) => {
     }
     setDeleting(true);
     try {
-      const res = await fetch(`/api/rfps/${rfpId}`, {
+      const res = await fetch(apiUrl(`/api/rfps/${rfpId}`), {
         method: "DELETE"
       });
       if (!res.ok) throw new Error("Failed to delete RFP");

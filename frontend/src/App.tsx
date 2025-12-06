@@ -3,6 +3,7 @@ import { RfpList } from "./components/RfpList";
 import { RfpDetail } from "./components/RfpDetail";
 import { VendorPanel } from "./components/VendorPanel";
 import { CreateRfpFromText } from "./components/CreateRfpFromText";
+import { apiUrl } from "./utils/api";
 
 export interface RfpSummary {
   id: number;
@@ -23,7 +24,7 @@ export const App: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/rfps");
+      const res = await fetch(apiUrl("/api/rfps"));
       if (!res.ok) throw new Error("Failed to load RFPs");
       const data = await res.json();
       setRfps(data);

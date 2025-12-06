@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { apiUrl } from "../utils/api";
 
 interface Props {
   onCreated: () => void;
@@ -15,7 +16,7 @@ export const CreateRfpFromText: React.FC<Props> = ({ onCreated }) => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/rfps/from-text", {
+      const res = await fetch(apiUrl("/api/rfps/from-text"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text })
