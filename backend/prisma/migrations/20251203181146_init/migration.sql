@@ -1,6 +1,6 @@
 -- CreateTable
 CREATE TABLE "Vendor" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "name" TEXT NOT NULL,
     "email" TEXT NOT NULL,
     "phone" TEXT,
@@ -10,7 +10,7 @@ CREATE TABLE "Vendor" (
 
 -- CreateTable
 CREATE TABLE "Rfp" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "title" TEXT NOT NULL,
     "description" TEXT NOT NULL,
     "budget" REAL,
@@ -26,7 +26,7 @@ CREATE TABLE "Rfp" (
 
 -- CreateTable
 CREATE TABLE "RfpLineItem" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "rfpId" INTEGER NOT NULL,
     "name" TEXT NOT NULL,
     "description" TEXT,
@@ -37,7 +37,7 @@ CREATE TABLE "RfpLineItem" (
 
 -- CreateTable
 CREATE TABLE "Proposal" (
-    "id" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+    "id" SERIAL PRIMARY KEY,
     "rfpId" INTEGER NOT NULL,
     "vendorId" INTEGER NOT NULL,
     "emailMessageId" TEXT,
