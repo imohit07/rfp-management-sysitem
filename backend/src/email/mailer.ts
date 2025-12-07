@@ -12,8 +12,9 @@ const transporter = nodemailer.createTransport({
   },
   tls: {
       rejectUnauthorized: true,
-    }
-});
+    },
+  family: 4,
+}as any);
 
 export async function sendRfpEmail(rfp: Rfp, vendors: Vendor[]): Promise<void> {
   const subject = `RFP #${rfp.id}: ${rfp.title}`;
