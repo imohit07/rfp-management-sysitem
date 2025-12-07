@@ -8,7 +8,7 @@ import { emailRouter } from "./routes/email";
 import { getPollingService } from "./email/pollingService";
 
 const app = express();
-
+console.log("Allowed Frontend URL:", process.env.FRONTEND_URL);
 app.use(cors({
   origin: process.env.FRONTEND_URL || true,
   credentials: true
