@@ -9,7 +9,10 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: env.SMTP_USER,
     pass: env.SMTP_PASS
-  }
+  },
+  tls: {
+      rejectUnauthorized: true,
+    }
 });
 
 export async function sendRfpEmail(rfp: Rfp, vendors: Vendor[]): Promise<void> {
